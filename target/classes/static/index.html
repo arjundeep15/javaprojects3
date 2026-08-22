@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bug Tracker</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; background: #f7f7f7; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { margin-bottom: 1rem; }
+    form { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    input, textarea, select, button { display: block; width: 100%; margin: 0.5rem 0; padding: 0.7rem; box-sizing: border-box; }
+    button { background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { background: white; padding: 1rem; margin: 0.75rem 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .meta { color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bug Tracker</h1>
+
+    <form id="bugForm">
+      <input id="title" placeholder="Bug title" required />
+      <textarea id="description" placeholder="Description" required></textarea>
+      <select id="status">
+        <option value="OPEN">OPEN</option>
+        <option value="IN_PROGRESS">IN_PROGRESS</option>
+        <option value="RESOLVED">RESOLVED</option>
+      </select>
+      <select id="severity">
+        <option value="LOW">LOW</option>
+        <option value="MEDIUM">MEDIUM</option>
+        <option value="HIGH">HIGH</option>
+        <option value="CRITICAL">CRITICAL</option>
+      </select>
+      <button type="submit">Report bug</button>
+    </form>
+
+    <h2>Recent Bugs</h2>
+    <ul id="bugList"></ul>
+  </div>
+
+  <script>
+    async function loadBugs() {
+      const res = await fetch('/api/bugs');
+      const bugs = await res.json();
+      const list = document.getElementById('bugList');
+      list.innerHTML = '';
+
+      if (!bugs.length) {
+        list.innerHTML = '<li>No bugs reported yet.</li>';
+        return;
+      }
+
+      bugs.forEach((bug) => {
+        const item = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = bug.title;
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = `${bug.status} - ${bug.severity}`;
+        const description = document.createElement('p');
+        description.textContent = bug.description;
+        const created = document.createElement('div');
+        created.className = 'meta';
+        created.textContent = `Created: ${new Date(bug.createdOn).toLocaleString()}`;
+        item.append(title, meta, description, created);
+        list.appendChild(item);
+      });
+    }
+
+    document.getElementById('bugForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        status: document.getElementById('status').value,
+        severity: document.getElementById('severity').value
+      };
+
+      await fetch('/api/bugs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      e.target.reset();
+      loadBugs();
+    });
+
+    loadBugs();
+  </script>
+</body>
+</html>
